@@ -1,9 +1,6 @@
 name       = "voting-bunker"
-pages_build_output_dir = "public"
+pages_build_output_dir = "dist"
+compatibility_date     = "2024-01-01"
 
-# Compatibilidad mínima requerida por crypto.subtle en Workers
-compatibility_date = "2024-01-01"
-
-# Variables de entorno (añadir secretos reales via: wrangler secret put VAR)
 [vars]
 ENVIRONMENT = "production"

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificando voto...</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="/src/validate.js"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4"
+      style="background:#07071a; background-image:radial-gradient(ellipse at 50% 40%,rgba(59,130,246,.06) 0%,transparent 60%); font-family:'Inter',system-ui,sans-serif;">
+
+  <div class="w-full max-w-sm fade-up">
+    <div class="bg-[#0d0d24] border border-white/8 rounded-2xl p-8 flex flex-col items-center gap-6">
+
+      <!-- Estado: procesando -->
+      <div id="state-loading" class="flex flex-col items-center gap-6 w-full">
+
+        <div class="relative w-16 h-16">
+          <div class="absolute inset-0 rounded-full border border-blue-500/20 ping-slow"></div>
+          <div class="w-16 h-16 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+            <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <h2 class="text-white font-semibold text-lg">Verificando tu voto</h2>
+          <p id="status-text" class="text-slate-400 text-sm mt-1">Iniciando protocolo seguro...</p>
+        </div>
+
+        <div class="w-full">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-slate-500 text-xs">Progreso</span>
+            <span id="pct-label" class="text-slate-400 text-xs font-mono">0%</span>
+          </div>
+          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div id="progress-fill" class="h-full rounded-full"></div>
+          </div>
+        </div>
+
+        <div class="w-full flex flex-col gap-2">
+          <div id="step-1" class="flex items-center gap-3 text-slate-500 text-xs">
+            <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
+            Validando token de sesión
+          </div>
+          <div id="step-2" class="flex items-center gap-3 text-slate-500 text-xs">
+            <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
+            Generando huella digital
+          </div>
+          <div id="step-3" class="flex items-center gap-3 text-slate-500 text-xs">
+            <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
+            Registrando en el búnker
+          </div>
+          <div id="step-4" class="flex items-center gap-3 text-slate-500 text-xs">
+            <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
+            Firmando con auditoría
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado: completado -->
+      <div id="state-done" style="display:none" class="flex flex-col items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+          <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+            <path class="check-path" stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+          </svg>
+        </div>
+        <div class="text-center">
+          <h2 class="text-white font-semibold text-lg">Voto registrado</h2>
+          <p class="text-slate-400 text-sm mt-1">Tu participación ha sido contabilizada.</p>
+        </div>
+        <div class="text-xs text-slate-600 font-mono bg-white/3 border border-white/5 rounded-lg px-4 py-2 text-center">
+          <span id="vote-ref">REF-········</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="text-center text-slate-700 text-xs mt-6">
+      Proceso auditado · Cloudflare Edge · <span id="ts-label"></span>
+    </p>
+  </div>
+
+</body>
+</html>
