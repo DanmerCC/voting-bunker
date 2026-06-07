@@ -5,18 +5,16 @@
  * Toda respuesta al cliente es 200 con el mismo cuerpo de éxito.
  * El estado real viaja en X-Audit (visible solo en CF Analytics).
  *
+ * Conteos reales → KV (binding VOTES) para persistencia cross-restart.
  * Auditoría: filtrar por X-Audit en Cloudflare Logs/Analytics Engine.
- *   real      → voto genuino (contar)
- *   duplicate → fingerprint ya registrado (no contar)
- *   invalid   → opción fuera del set válido (no contar)
+ *   real      → voto genuino (KV incrementado)
+ *   duplicate → fingerprint ya registrado (no cuenta)
+ *   invalid   → opción fuera del set válido (no cuenta)
  */
 
-const voteSlots = new Map();
-
+const voteSlots     = new Map();
 const VALID_OPCIONES = new Set(['jp', 'k', 'nulo']);
-
-/* Cuerpo de respuesta siempre idéntico — el atacante no puede distinguir */
-const FAKE_OK = JSON.stringify({ status: 'registered', message: 'Voto registrado exitosamente' });
+const FAKE_OK        = JSON.stringify({ status: 'registered', message: 'Voto registrado exitosamente' });
 
 function hourBucket() {
   return Math.floor(Date.now() / (1000 * 60 * 60));
@@ -45,49 +43,55 @@ function pruneOldSlots() {
   }
 }
 
-/* Construye respuesta 200 con header de auditoría interno */
+/* Incrementa el contador en KV de forma atómica (best-effort) */
+async function incrementKV(env, opcion) {
+  if (!env.VOTES) return;  // KV no configurado todavía
+  try {
+    const current = parseInt(await env.VOTES.get(opcion) || '0', 10);
+    await env.VOTES.put(opcion, String(current + 1));
+    // Actualizar también el timestamp del último voto
+    await env.VOTES.put('last_updated', new Date().toISOString());
+  } catch (_) { /* silencioso — el voto se registra igual */ }
+}
+
 function ok(auditStatus, origin) {
   return new Response(FAKE_OK, {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': origin || '*',
-      /* Solo visible en CF Logs / Analytics Engine — el cliente lo recibe
-         pero no tiene incentivo de mirarlo; si lo hace, solo ve una cadena */
       'X-Audit': auditStatus,
     },
   });
 }
 
-export async function onRequestPost({ request, params }) {
+export async function onRequestPost({ request, params, env, ctx }) {
   const origin    = request.headers.get('Origin') || '*';
   const rawOpcion = (params.opcion || '').toLowerCase();
 
-  /* ── Modo Búnker: URL termina en 'x' ── */
   const isBunker = rawOpcion.endsWith('x');
   const opcion   = isBunker ? rawOpcion.slice(0, -1) : rawOpcion;
 
-  /* Opción fuera del set → 200 igual, auditoría marca 'invalid' */
   if (!VALID_OPCIONES.has(opcion)) {
     return ok('invalid', origin);
   }
 
-  /* Fingerprinting */
   const fingerprint = await buildFingerprint(request, opcion);
   pruneOldSlots();
   const slotKey = `${hourBucket()}_${fingerprint}`;
 
-  /* Slot ocupado → 200 igual, auditoría marca 'duplicate' */
   if (voteSlots.has(slotKey)) {
     return ok('duplicate', origin);
   }
 
-  /* Voto real */
   voteSlots.set(slotKey, { opcion, ts: Date.now(), bunker: isBunker });
+
+  /* Incrementar KV en background (no bloquea la respuesta) */
+  ctx.waitUntil(incrementKV(env, opcion));
+
   return ok('real', origin);
 }
 
-/* Preflight CORS */
 export async function onRequestOptions({ request }) {
   return new Response(null, {
     status: 204,
@@ -98,6 +102,3 @@ export async function onRequestOptions({ request }) {
     },
   });
 }
-
-/* GET/PUT/DELETE caen al handler estático de Pages → devuelve index.html
-   El atacante ve la página de votación, no un error que lo oriente. */
