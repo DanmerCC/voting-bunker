@@ -116,3 +116,12 @@ export async function onRequestOptions({ request }) {
     headers: corsHeaders(request.headers.get('Origin') || '*'),
   });
 }
+
+/* Rechazar explícitamente GET/PUT/DELETE/etc. */
+export async function onRequest({ request }) {
+  if (request.method === 'POST' || request.method === 'OPTIONS') return
+  return new Response(JSON.stringify({ error: 'Método no permitido' }), {
+    status: 405,
+    headers: { ...corsHeaders('*'), Allow: 'POST, OPTIONS' },
+  })
+}
