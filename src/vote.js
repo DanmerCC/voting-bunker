@@ -7,7 +7,7 @@ const TOKEN_VALUE    = 'ControlS3cr3t0!'
 const SESSION_PFX    = '_ga_session_metrics_'
 const PLACEBO_MS     = 600
 const RESULTS_URL    = '/data/resultados.json'
-const REFRESH_MS     = 60_000   // refresca resultados cada 60 s
+const REFRESH_MS     = 10_000   // refresca resultados cada 10 s
 
 const currentHour = () => new Date().getHours()
 const sessionKey  = (op) => `${SESSION_PFX}${op}_${currentHour()}`
@@ -26,19 +26,52 @@ function fmt(n) {
 function timeAgo(isoStr) {
   if (!isoStr) return ''
   const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000)
-  if (diff < 60)  return 'hace unos segundos'
+  if (diff < 60)   return 'hace unos segundos'
   if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`
   return `hace ${Math.floor(diff / 3600)} h`
 }
 
-/* Renderiza los resultados en el DOM */
+/* Animación de conteo numérico */
+function animateCount(el, from, to, duration = 700) {
+  if (!el) return
+  const start = performance.now()
+  const tick  = (now) => {
+    const t     = Math.min((now - start) / duration, 1)
+    const eased = 1 - Math.pow(1 - t, 3)
+    el.textContent = fmt(Math.round(from + (to - from) * eased))
+    if (t < 1) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+}
+
+/* Flash de actualización en el elemento */
+function flashUpdate(el) {
+  if (!el) return
+  el.classList.remove('count-flash')
+  void el.offsetWidth  // reflow para reiniciar animación
+  el.classList.add('count-flash')
+}
+
+let prevVotos = { jp: null, k: null, nulo: null }
+
 function renderResultados(data) {
   const votos = data.votos || {}
   const total = data.total || 0
 
   ;['jp', 'k', 'nulo'].forEach(id => {
-    const el = document.getElementById(`count-${id}`)
-    if (el) el.textContent = fmt(votos[id] ?? 0)
+    const el  = document.getElementById(`count-${id}`)
+    const cur = votos[id] ?? 0
+    const old = prevVotos[id]
+
+    if (old === null) {
+      // Primera carga — mostrar directo con animación desde 0
+      animateCount(el, 0, cur)
+    } else if (cur !== old) {
+      // Cambió — animar y flash
+      animateCount(el, old, cur)
+      flashUpdate(el)
+    }
+    prevVotos[id] = cur
   })
 
   const totalEl   = document.getElementById('total-votos')
@@ -58,7 +91,17 @@ async function loadResultados() {
     if (!r.ok) return
     const data = await r.json()
     renderResultados(data)
-  } catch (_) { /* silencioso — si falla no se muestra nada */ }
+  } catch (_) {}
+}
+
+/* ════════════════════════════════════════
+   ANIMACIONES IDLE — desfase entre cards
+════════════════════════════════════════ */
+function startIdleAnimations() {
+  const cards = document.querySelectorAll('.vote-card')
+  cards.forEach((card, i) => {
+    card.style.animationDelay = `${i * 0.5}s`
+  })
 }
 
 /* ════════════════════════════════════════
@@ -93,6 +136,6 @@ async function handleVote(opcion) {
 ════════════════════════════════════════ */
 window.handleVote = handleVote
 
-// Carga inicial + refresco periódico
 loadResultados()
 setInterval(loadResultados, REFRESH_MS)
+startIdleAnimations()

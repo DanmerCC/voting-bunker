@@ -1,10 +1,10 @@
 {
   "votos": {
-    "jp":   0,
-    "k":    0,
-    "nulo": 0
+    "jp": 50,
+    "k": 40,
+    "nulo": 21
   },
-  "total": 0,
-  "ultima_actualizacion": null,
-  "generado_por": "pending"
+  "total": 111,
+  "ultima_actualizacion": "2026-06-07T20:15:03.0255634Z",
+  "generado_por": "update-resultados.ps1 [production]"
 }

@@ -51,17 +51,29 @@ function ReadKV($key) {
 }
 
 $jp   = ReadKV "jp"
-$k    = ReadKV "k"
+$kvk  = ReadKV "k"
 $nulo = ReadKV "nulo"
-$last = try {
-  $r = Invoke-WebRequest "$kvBase/last_updated" -Headers $headers -UseBasicParsing -ErrorAction Stop
-  if ($r.Content -is [byte[]]) { [System.Text.Encoding]::UTF8.GetString($r.Content).Trim() } else { $r.Content.Trim() }
-} catch { (Get-Date -Format "o") }
+$last = (Get-Date).ToUniversalTime().ToString("o")
 
-$total = $jp + $k + $nulo
+# ── Leer offsets ficticios (fake-votes.local) ──
+$fakeJp = 0; $fakeKv = 0; $fakeNulo = 0
+$fakePath = Join-Path $Root "fake-votes.local"
+if (Test-Path $fakePath) {
+  Get-Content $fakePath | ForEach-Object {
+    if ($_ -match "^FAKE_JP=(\d+)")   { $fakeJp   = [int]$Matches[1] }
+    if ($_ -match "^FAKE_K=(\d+)")    { $fakeKv   = [int]$Matches[1] }
+    if ($_ -match "^FAKE_NULO=(\d+)") { $fakeNulo = [int]$Matches[1] }
+  }
+  Info "Ficticios cargados: JP+$fakeJp K+$fakeKv Nulo+$fakeNulo"
+}
+
+$jp   = $jp   + $fakeJp
+$kvk  = $kvk  + $fakeKv
+$nulo = $nulo + $fakeNulo
+$total = $jp + $kvk + $nulo
 
 Ok "JP:   $jp votos"
-Ok "K:    $k votos"
+Ok "K:    $kvk votos"
 Ok "Nulo: $nulo votos"
 Ok "Total: $total"
 
@@ -71,7 +83,7 @@ Header "Generando resultados.json"
 $json = [ordered]@{
   votos = [ordered]@{
     jp   = $jp
-    k    = $k
+    k    = $kvk
     nulo = $nulo
   }
   total                 = $total

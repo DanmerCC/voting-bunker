@@ -81,3 +81,44 @@
   50%       { transform: scale(1.4); opacity: 0.5; }
 }
 .ping-slow { animation: ping-slow 1.4s ease-in-out infinite; }
+
+/* ── Cards flotan suavemente en idle ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-8px); }
+}
+.card-float { animation: float 4s ease-in-out infinite; }
+
+/* ── Borde pulsante en cada card ── */
+@keyframes border-pulse-blue {
+  0%, 100% { box-shadow: 0 0 40px rgba(59,130,246,.08),  0 0  0px rgba(59,130,246,0); }
+  50%       { box-shadow: 0 0 60px rgba(59,130,246,.18), 0 0 30px rgba(59,130,246,.12); }
+}
+@keyframes border-pulse-violet {
+  0%, 100% { box-shadow: 0 0 40px rgba(139,92,246,.08),  0 0  0px rgba(139,92,246,0); }
+  50%       { box-shadow: 0 0 60px rgba(139,92,246,.18), 0 0 30px rgba(139,92,246,.12); }
+}
+@keyframes border-pulse-slate {
+  0%, 100% { box-shadow: 0 0 40px rgba(100,116,139,.06); }
+  50%       { box-shadow: 0 0 50px rgba(100,116,139,.14); }
+}
+.vote-card-jp   { animation: float 4s ease-in-out infinite, border-pulse-blue   3s ease-in-out infinite; }
+.vote-card-k    { animation: float 4s ease-in-out infinite, border-pulse-violet 3s ease-in-out infinite; }
+.vote-card-nulo { animation: float 4s ease-in-out infinite, border-pulse-slate  3s ease-in-out infinite; }
+
+/* ── Flash POTENTE en número al actualizarse ── */
+@keyframes count-flash {
+  0%   { transform: scale(1.0); filter: brightness(1); }
+  20%  { transform: scale(1.18); filter: brightness(2.5) drop-shadow(0 0 16px currentColor); }
+  50%  { transform: scale(1.12); filter: brightness(1.8) drop-shadow(0 0 10px currentColor); }
+  100% { transform: scale(1.0); filter: brightness(1); }
+}
+.count-flash { animation: count-flash 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ── Glow pulso en botones ── */
+@keyframes btn-breathe {
+  0%, 100% { filter: brightness(1);    transform: scale(1); }
+  50%       { filter: brightness(1.15); transform: scale(1.02); }
+}
+.vote-card button { animation: btn-breathe 2.5s ease-in-out infinite; }
+.vote-card button:hover { animation: none; filter: brightness(1.25); transform: scale(1.03); }
