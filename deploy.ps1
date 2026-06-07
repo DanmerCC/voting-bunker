@@ -1,13 +1,20 @@
 # ═══════════════════════════════════════════════════════
 #  deploy.ps1 — Script de despliegue automatizado
-#  Voting Búnker → Cloudflare Pages (elecciones2026)
+#  Voting Búnker → Cloudflare Pages
 #
 #  Uso:
-#    .\deploy.ps1              → build + deploy CF Pages
-#    .\deploy.ps1 -SkipBuild   → deploy sin rebuild
-#    .\deploy.ps1 -DryRun      → solo build, sin subir
+#    .\deploy.ps1                    → build + deploy a PRODUCCIÓN
+#    .\deploy.ps1 -Env testing       → build + deploy a TESTING
+#    .\deploy.ps1 -SkipBuild         → deploy sin rebuild
+#    .\deploy.ps1 -DryRun            → solo build, sin subir
+#
+#  Entornos:
+#    production  → elecciones2026.peruanoeligebien.com
+#    testing     → testing.elecciones2026.peruanoeligebien.com
 # ═══════════════════════════════════════════════════════
 param(
+  [ValidateSet("production","testing")]
+  [string]$Env = "production",
   [switch]$SkipBuild,
   [switch]$DryRun
 )
@@ -15,12 +22,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── Colores ──
-function Info($msg)    { Write-Host "  $msg" -ForegroundColor Cyan }
-function Ok($msg)      { Write-Host "  ✓ $msg" -ForegroundColor Green }
-function Warn($msg)    { Write-Host "  ⚠ $msg" -ForegroundColor Yellow }
-function Err($msg)     { Write-Host "  ✗ $msg" -ForegroundColor Red; exit 1 }
-function Header($msg)  { Write-Host "`n━━━ $msg ━━━" -ForegroundColor Magenta }
+function Info($msg)   { Write-Host "  $msg" -ForegroundColor Cyan }
+function Ok($msg)     { Write-Host "  ✓ $msg" -ForegroundColor Green }
+function Warn($msg)   { Write-Host "  ⚠ $msg" -ForegroundColor Yellow }
+function Err($msg)    { Write-Host "  ✗ $msg" -ForegroundColor Red; exit 1 }
+function Header($msg) { Write-Host "`n━━━ $msg ━━━" -ForegroundColor Magenta }
 
 $Root = $PSScriptRoot
 
@@ -35,13 +41,21 @@ Get-Content $envFile | ForEach-Object {
   }
 }
 
-$token   = $env:CLOUDFLARE_API_TOKEN
-$project = $env:CF_PROJECT_NAME
-$url     = $env:CF_URL
+$token = $env:CLOUDFLARE_API_TOKEN
+if (-not $token) { Err "CLOUDFLARE_API_TOKEN no está en .env" }
 
-if (-not $token)   { Err "CLOUDFLARE_API_TOKEN no está en .env" }
-if (-not $project) { Err "CF_PROJECT_NAME no está en .env" }
+# Seleccionar entorno
+if ($Env -eq "testing") {
+  $project = $env:CF_TESTING_PROJECT
+  $url     = $env:CF_TESTING_URL
+  $branch  = "testing"
+} else {
+  $project = $env:CF_PROJECT_NAME
+  $url     = $env:CF_PROD_URL
+  $branch  = "main"
+}
 
+Ok "Entorno  : $Env"
 Ok "Proyecto : $project"
 Ok "URL      : $url"
 
@@ -56,14 +70,14 @@ if (-not $SkipBuild) {
   Warn "Build omitido (-SkipBuild)"
 }
 
-# ── 3. Deploy a Cloudflare Pages ──
+# ── 3. Deploy ──
 if (-not $DryRun) {
-  Header "Deploy → Cloudflare Pages"
+  Header "Deploy → Cloudflare Pages [$Env]"
   $env:CLOUDFLARE_API_TOKEN = $token
 
   npx wrangler pages deploy dist `
     --project-name $project `
-    --branch main
+    --branch $branch
 
   if ($LASTEXITCODE -ne 0) { Err "Deploy falló" }
   Ok "Deploy completado"
