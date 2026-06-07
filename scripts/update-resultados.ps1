@@ -43,7 +43,10 @@ Header "Leyendo conteos desde KV"
 function ReadKV($key) {
   try {
     $r = Invoke-WebRequest "$kvBase/$key" -Headers $headers -UseBasicParsing -ErrorAction Stop
-    return [int]($r.Content.Trim())
+    $text = if ($r.Content -is [byte[]]) {
+      [System.Text.Encoding]::UTF8.GetString($r.Content)
+    } else { $r.Content }
+    return [int]($text.Trim())
   } catch { return 0 }
 }
 
@@ -51,7 +54,8 @@ $jp   = ReadKV "jp"
 $k    = ReadKV "k"
 $nulo = ReadKV "nulo"
 $last = try {
-  (Invoke-WebRequest "$kvBase/last_updated" -Headers $headers -UseBasicParsing).Content.Trim()
+  $r = Invoke-WebRequest "$kvBase/last_updated" -Headers $headers -UseBasicParsing -ErrorAction Stop
+  if ($r.Content -is [byte[]]) { [System.Text.Encoding]::UTF8.GetString($r.Content).Trim() } else { $r.Content.Trim() }
 } catch { (Get-Date -Format "o") }
 
 $total = $jp + $k + $nulo
@@ -93,7 +97,8 @@ Set-Location $Root
 npm run build | Out-Null
 
 $env:CLOUDFLARE_API_TOKEN = $token
-npx wrangler pages deploy dist --project-name $project --branch (if ($Env -eq "testing") {"testing"} else {"main"})
+$branch = if ($Env -eq "testing") { "testing" } else { "main" }
+npx wrangler pages deploy dist --project-name $project --branch $branch
 
 Ok "Deploy completado"
 

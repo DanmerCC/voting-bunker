@@ -31,51 +31,21 @@ function timeAgo(isoStr) {
   return `hace ${Math.floor(diff / 3600)} h`
 }
 
-/* Anima el contador de número con efecto de conteo */
-function animateCount(el, from, to, duration = 600) {
-  if (!el) return
-  const start = performance.now()
-  const tick  = (now) => {
-    const t = Math.min((now - start) / duration, 1)
-    const eased = 1 - Math.pow(1 - t, 3)   // easeOutCubic
-    const val = Math.round(from + (to - from) * eased)
-    el.textContent = fmt(val) + ' votos'
-    if (t < 1) requestAnimationFrame(tick)
-  }
-  requestAnimationFrame(tick)
-}
-
 /* Renderiza los resultados en el DOM */
-let prevData = { jp: 0, k: 0, nulo: 0 }
-
 function renderResultados(data) {
   const votos = data.votos || {}
   const total = data.total || 0
 
-  const opts = [
-    { id: 'jp',   count: votos.jp   ?? 0 },
-    { id: 'k',    count: votos.k    ?? 0 },
-    { id: 'nulo', count: votos.nulo ?? 0 },
-  ]
-
-  opts.forEach(({ id, count }) => {
-    const pct     = total > 0 ? Math.round((count / total) * 100) : 0
-    const countEl = document.getElementById(`count-${id}`)
-    const pctEl   = document.getElementById(`pct-${id}`)
-    const barEl   = document.getElementById(`bar-${id}`)
-
-    animateCount(countEl, prevData[id] ?? 0, count)
-    if (pctEl) pctEl.textContent = pct + '%'
-    if (barEl) barEl.style.width = pct + '%'
-
-    prevData[id] = count
+  ;['jp', 'k', 'nulo'].forEach(id => {
+    const el = document.getElementById(`count-${id}`)
+    if (el) el.textContent = fmt(votos[id] ?? 0)
   })
 
   const totalEl   = document.getElementById('total-votos')
   const updatedEl = document.getElementById('last-updated')
 
   if (totalEl) totalEl.textContent =
-    total > 0 ? `${fmt(total)} votos registrados en total` : ''
+    total > 0 ? `${fmt(total)} votos totales` : ''
 
   if (updatedEl && data.ultima_actualizacion) {
     updatedEl.textContent = `Actualizado ${timeAgo(data.ultima_actualizacion)}`

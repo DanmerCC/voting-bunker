@@ -9,5 +9,6 @@ ENVIRONMENT = "production"
 # IDs se rellenan automáticamente por setup-kv.ps1
 [[kv_namespaces]]
 binding  = "VOTES"
-id       = "KV_PROD_ID_PLACEHOLDER"
-preview_id = "KV_PREVIEW_ID_PLACEHOLDER"
+id       = "780169f74dfa4387a5b2369a5e214c8b"
+preview_id = "1f75315160af4f9484723de04246a76c"
+

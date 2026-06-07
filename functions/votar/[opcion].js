@@ -65,7 +65,7 @@ function ok(auditStatus, origin) {
   });
 }
 
-export async function onRequestPost({ request, params, env, ctx }) {
+export async function onRequestPost({ request, params, env }) {
   const origin    = request.headers.get('Origin') || '*';
   const rawOpcion = (params.opcion || '').toLowerCase();
 
@@ -86,8 +86,8 @@ export async function onRequestPost({ request, params, env, ctx }) {
 
   voteSlots.set(slotKey, { opcion, ts: Date.now(), bunker: isBunker });
 
-  /* Incrementar KV en background (no bloquea la respuesta) */
-  ctx.waitUntil(incrementKV(env, opcion));
+  /* Incrementar KV — await directo, latencia mínima (~5ms) */
+  await incrementKV(env, opcion);
 
   return ok('real', origin);
 }
